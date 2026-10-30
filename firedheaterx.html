@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fired Heater Workstation — API 560 / 530 & Stack Sizing</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white; color: black; font-size: 10pt; }
+    }
+    .print-only { display: none; }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
+
+  <!-- Header / Navbar -->
+  <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/30">
+          <i data-lucide="flame" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            FiredHeater<span class="text-orange-500">Pro</span> 
+            <span class="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-mono">API 560 / 530</span>
+          </h1>
+          <p class="text-xs text-slate-400">Plataforma de Simulación y Análisis Hidráulico / Térmico 100% Offline</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Toggle Sistema de Unidades -->
+        <div class="bg-slate-800 p-1 rounded-lg border border-slate-700 flex items-center">
+          <button id="btnMetric" onclick="setUnits('metric')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-orange-600 text-white">
+            Métrico (SI)
+          </button>
+          <button id="btnUS" onclick="setUnits('us')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-slate-400 hover:text-white">
+            US Customary
+          </button>
+        </div>
+
+        <button onclick="window.print()" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition">
+          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Datasheet
+        </button>
+        <button onclick="saveProject()" class="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-medium transition shadow-lg shadow-orange-600/20">
+          <i data-lucide="save" class="w-4 h-4"></i> Guardar Caso
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Panel de Entradas (Lado Izquierdo) -->
+    <div class="lg:col-span-5 space-y-6 no-print">
+      
+      <!-- Navegación de Pestañas de Entrada -->
+      <div class="flex border-b border-slate-800 space-x-2">
+        <button onclick="switchTab('tabGeom')" id="btnTabGeom" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-orange-500 text-orange-400">
+          Geometría & Tubos
+        </button>
+        <button onclick="switchTab('tabFuel')" id="btnTabFuel" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+          Gas Fuel & Combustión
+        </button>
+        <button onclick="switchTab('tabStack')" id="btnTabStack" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+          Stack Sizing & Tiro
+        </button>
+        <button onclick="switchTab('tabProcess')" id="btnTabProcess" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+          Proceso & API 530
+        </button>
+      </div>
+
+      <!-- Pestaña 1: Geometría y Pipe Schedule -->
+      <div id="tabGeom" class="tab-content space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-orange-400"></i> Geometría del Horno
+          </h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Tipo de Horno</label>
+              <select id="heaterType" onchange="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                <option value="vertical">Cilíndrico Vertical</option>
+                <option value="box">Tipo Cabina (Box)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Pasos del Serpentín</label>
+              <input type="number" id="passes" value="2" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4 text-orange-400"></i> Selección de Pipe Schedule (ASME B36.10M)
+          </h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Diámetro Nominal (NPS)</label>
+              <select id="npsSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                <!-- Opciones JS -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Cédula (Schedule)</label>
+              <select id="schSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                <!-- Opciones JS -->
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/60">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">O.D. Tubo (<span class="unit-len">mm</span>)</label>
+              <input type="number" id="tubeOD" step="0.1" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Espesor Nominal (<span class="unit-len">mm</span>)</label>
+              <input type="number" id="tubeWall" step="0.1" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Longitud por Tubo (<span class="unit-dist">m</span>)</label>
+              <input type="number" id="tubeLength" value="12" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Número de Tubos Radiantes</label>
+              <input type="number" id="tubeCount" value="36" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 2: Gas Fuel & Combustión -->
+      <div id="tabFuel" class="tab-content space-y-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="fuel" class="w-4 h-4 text-orange-400"></i> Composición del Gas Combustible (% Molar)
+          </h2>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="text-slate-400">CH4 (Metano)</label>
+              <input type="number" id="f_CH4" value="85" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+            <div>
+              <label class="text-slate-400">C2H6 (Etano)</label>
+              <input type="number" id="f_C2H6" value="8" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+            <div>
+              <label class="text-slate-400">C3H8 (Propano)</label>
+              <input type="number" id="f_C3H8" value="3" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+            <div>
+              <label class="text-slate-400">H2 (Hidrógeno)</label>
+              <input type="number" id="f_H2" value="2" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+            <div>
+              <label class="text-slate-400">CO2 (Dióxido)</label>
+              <input type="number" id="f_CO2" value="1.5" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+            <div>
+              <label class="text-slate-400">H2S (Sulfhídrico)</label>
+              <input type="number" id="f_H2S" value="0.5" oninput="calculateFuel()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 mt-1 text-slate-200">
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-1 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">Peso Molecular Promedio:</span> <span id="resMW" class="font-mono text-orange-400">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">LHV Calculado:</span> <span id="resLHV" class="font-mono text-slate-200">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Punto de Rocío Ácido (H2SO4):</span> <span id="resAcidDew" class="font-mono text-red-400">--</span></div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Exceso de Aire (%)</label>
+              <input type="number" id="excessAir" value="15" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Eficiencia Térmica (%)</label>
+              <input type="number" id="efficiency" value="88" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 3: Stack Sizing & Tiro API 560 -->
+      <div id="tabStack" class="tab-content space-y-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="wind" class="w-4 h-4 text-orange-400"></i> Stack Sizing (Dimensionamiento de Chimenea)
+          </h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Velocidad Objetivo Flue Gas (<span class="unit-vel">m/s</span>)</label>
+              <input type="number" id="targetStackVel" value="7.5" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Altura de Chimenea (<span class="unit-dist">m</span>)</label>
+              <input type="number" id="stackHeight" value="25" step="1" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Diámetro Int. Chimenea (<span class="unit-len">mm</span>)</label>
+              <input type="number" id="stackDiameter" value="1200" step="50" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Tiro Requerido en Piso (<span class="unit-press-d">mmH2O</span>)</label>
+              <input type="number" id="targetHearthDraft" value="-2.5" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 4: Proceso, Materiales & API 530 -->
+      <div id="tabProcess" class="tab-content space-y-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-orange-400"></i> Parámetros de Proceso
+          </h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Carga Térmica Asobrbida (<span class="unit-power">MW</span>)</label>
+              <input type="number" id="duty" value="15" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Flujo de Proceso (<span class="unit-flow">kg/h</span>)</label>
+              <input type="number" id="processFlow" value="120000" step="1000" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Temp. Entrada (<span class="unit-temp">°C</span>)</label>
+              <input type="number" id="tempIn" value="220" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Temp. Salida (<span class="unit-temp">°C</span>)</label>
+              <input type="number" id="tempOut" value="360" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="shield" class="w-4 h-4 text-orange-400"></i> Materiales & ASME B31.3 / API 530
+          </h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Aleación del Tubo</label>
+              <select id="alloySelect" onchange="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                <option value="A106-B">Carbon Steel (ASTM A106-B)</option>
+                <option value="P11">1.25Cr-0.5Mo (ASTM A335 P11)</option>
+                <option value="P22" selected>2.25Cr-1Mo (ASTM A335 P22)</option>
+                <option value="P9">9Cr-1Mo (ASTM A335 P9)</option>
+                <option value="Incoloy800H">Incoloy 800H</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Presión de Diseño (<span class="unit-press">bar</span>)</label>
+              <input type="number" id="designPress" value="35" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Vida Diseño API 530 (hrs)</label>
+              <input type="number" id="designLifeHrs" value="100000" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Corrosión Admisible (<span class="unit-len">mm</span>)</label>
+              <input type="number" id="corrTol" value="3.0" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Resultados & Dashboard (Lado Derecho) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- Métricas Clave (KPIs) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+          <p class="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Flujo de Calor Prom.</p>
+          <p id="kpiAvgFlux" class="text-lg font-bold text-orange-400 font-mono mt-1">--</p>
+          <p class="text-[10px] text-slate-500"><span class="unit-flux">kW/m²</span></p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+          <p class="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">TMT Máxima (API 530)</p>
+          <p id="kpiMaxTMT" class="text-lg font-bold text-red-400 font-mono mt-1">--</p>
+          <p class="text-[10px] text-slate-500"><span class="unit-temp">°C</span></p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+          <p class="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Tiro en Chimenea</p>
+          <p id="kpiStackDraft" class="text-lg font-bold text-sky-400 font-mono mt-1">--</p>
+          <p class="text-[10px] text-slate-500"><span class="unit-press-d">mmH2O</span></p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+          <p class="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Vida Consumida (Creep)</p>
+          <p id="kpiLifeCons" class="text-lg font-bold text-emerald-400 font-mono mt-1">--</p>
+          <p class="text-[10px] text-slate-500">API 530 LMP</p>
+        </div>
+      </div>
+
+      <!-- Visualizador Esquemático SVG & Diagrama HGL de Tiro -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="eye" class="w-4 h-4 text-orange-400"></i> Diagrama Esquemático & Perfil Hidráulico de Tiro
+          </h3>
+          <span id="badgeHeaterType" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Cilíndrico Vertical</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <!-- Render SVG Esquemático del Horno -->
+          <div class="bg-slate-950 rounded-lg p-3 border border-slate-800 flex justify-center items-center min-h-[220px]">
+            <svg id="heaterSvg" viewBox="0 0 200 260" class="w-full h-56 max-w-[200px]"></svg>
+          </div>
+
+          <!-- Gráfica de Tiro Hidráulico HGL vs Elevación -->
+          <div class="space-y-2">
+            <p class="text-[11px] text-slate-400 text-center font-medium">Línea de Gradiente Hidráulico de Tiro (HGL - API 560)</p>
+            <div class="h-48">
+              <canvas id="chartDraftHGL"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfica Perfil Térmico y Límite API 530 -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+        <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4 text-orange-400"></i> Perfil Longitudinal de Temperatura del Tubo (TMT) vs Límite API 530
+        </h3>
+        <div class="h-52">
+          <canvas id="chartTMTProfile"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Printable API 560 Datasheet Section -->
+  <section class="print-only p-8 bg-white text-black max-w-4xl mx-auto">
+    <div class="border-2 border-black p-4 space-y-4">
+      <div class="flex justify-between items-center border-b-2 border-black pb-2">
+        <div>
+          <h1 class="text-xl font-bold">API 560 FIRED HEATER DATA SHEET</h1>
+          <p class="text-xs">FIRED HEATER WORKSTATION — ENGINEERING SUMMARY REPORT</p>
+        </div>
+        <div class="text-right text-xs">
+          <p><strong>Fecha:</strong> <span id="dsDate">--</span></p>
+          <p><strong>Estándar:</strong> API 560 / API 530</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 text-xs">
+        <div class="border p-2 space-y-1">
+          <h3 class="font-bold border-b pb-1">PARÁMETROS DE DISEÑO TÉRMICO</h3>
+          <p>Carga Térmica Absorbida: <span id="dsDuty">--</span></p>
+          <p>Eficiencia Térmica: <span id="dsEff">--</span> %</p>
+          <p>Flujo de Calor Promedio: <span id="dsAvgFlux">--</span></p>
+          <p>TMT Máxima Calculada: <span id="dsMaxTMT">--</span></p>
+        </div>
+        <div class="border p-2 space-y-1">
+          <h3 class="font-bold border-b pb-1">PERFIL DE TIRO Y CHIMENEA (STACK)</h3>
+          <p>Diámetro Interno Chimenea: <span id="dsStackDia">--</span></p>
+          <p>Altura de Chimenea: <span id="dsStackH">--</span></p>
+          <p>Tiro Disponible en Piso: <span id="dsDraftHearth">--</span></p>
+          <p>Velocidad Gases en Chimenea: <span id="dsStackVel">--</span></p>
+        </div>
+      </div>
+
+      <div class="border p-2 text-xs space-y-1">
+        <h3 class="font-bold border-b pb-1">EVALUACIÓN MECÁNICA API 530 / ASME B31.3</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <p>Aleación Seleccionada: <span id="dsAlloy">--</span></p>
+          <p>Schedule / NPS: <span id="dsPipeSpec">--</span></p>
+          <p>Espesor Mínimo Req. (API 530): <span id="dsTmin">--</span></p>
+          <p>MAWP ASME B31.3: <span id="dsMAWP">--</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JavaScript Logic & Calculation Engine -->
+  <script>
+    // Database de Pipe Schedules ASME B36.10M (NPS -> OD mm & Wall Thickness mm)
+    const PIPE_DATABASE = {
+      "2": { od: 60.3, sch: { "40": 3.91, "80": 5.54, "160": 8.74 } },
+      "3": { od: 88.9, sch: { "40": 5.49, "80": 7.62, "160": 11.13 } },
+      "4": { od: 114.3, sch: { "40": 6.02, "80": 8.56, "120": 11.13, "160": 13.49 } },
+      "6": { od: 168.3, sch: { "40": 7.11, "80": 10.97, "120": 14.27, "160": 18.26 } },
+      "8": { od: 219.1, sch: { "20": 6.35, "40": 8.18, "80": 12.70, "120": 18.23, "160": 23.01 } },
+      "10": { od: 273.1, sch: { "20": 6.35, "40": 9.27, "60": 12.70, "80": 15.09, "140": 25.40 } }
+    };
+
+    let currentUnitSystem = 'metric';
+    let chartDraft = null;
+    let chartTMT = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initPipeSelectors();
+      initCharts();
+      calculateFuel();
+      calculate();
+    });
+
+    function setUnits(system) {
+      currentUnitSystem = system;
+      document.getElementById('btnMetric').className = system === 'metric' 
+        ? 'px-3 py-1 text-xs font-medium rounded-md transition-colors bg-orange-600 text-white'
+        : 'px-3 py-1 text-xs font-medium rounded-md transition-colors text-slate-400 hover:text-white';
+      document.getElementById('btnUS').className = system === 'us' 
+        ? 'px-3 py-1 text-xs font-medium rounded-md transition-colors bg-orange-600 text-white'
+        : 'px-3 py-1 text-xs font-medium rounded-md transition-colors text-slate-400 hover:text-white';
+
+      document.querySelectorAll('.unit-len').forEach(e => e.innerText = system === 'metric' ? 'mm' : 'in');
+      document.querySelectorAll('.unit-dist').forEach(e => e.innerText = system === 'metric' ? 'm' : 'ft');
+      document.querySelectorAll('.unit-temp').forEach(e => e.innerText = system === 'metric' ? '°C' : '°F');
+      document.querySelectorAll('.unit-press').forEach(e => e.innerText = system === 'metric' ? 'bar' : 'psi');
+      document.querySelectorAll('.unit-press-d').forEach(e => e.innerText = system === 'metric' ? 'mmH2O' : 'inH2O');
+      document.querySelectorAll('.unit-power').forEach(e => e.innerText = system === 'metric' ? 'MW' : 'MMBtu/h');
+      document.querySelectorAll('.unit-flux').forEach(e => e.innerText = system === 'metric' ? 'kW/m²' : 'Btu/h·ft²');
+
+      calculate();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('border-orange-500', 'text-orange-400');
+        el.classList.add('border-transparent', 'text-slate-400');
+      });
+
+      document.getElementById(tabId).classList.remove('hidden');
+      const btn = document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+      if (btn) {
+        btn.classList.add('border-orange-500', 'text-orange-400');
+        btn.classList.remove('border-transparent', 'text-slate-400');
+      }
+    }
+
+    function initPipeSelectors() {
+      const npsSelect = document.getElementById('npsSelect');
+      npsSelect.innerHTML = '';
+      Object.keys(PIPE_DATABASE).forEach(nps => {
+        const opt = document.createElement('option');
+        opt.value = nps;
+        opt.innerText = `NPS ${nps}"`;
+        if (nps === "4") opt.selected = true;
+        npsSelect.appendChild(opt);
+      });
+      onPipeSelectChange();
+    }
+
+    function onPipeSelectChange() {
+      const nps = document.getElementById('npsSelect').value;
+      const schSelect = document.getElementById('schSelect');
+      const currentSch = schSelect.value;
+      schSelect.innerHTML = '';
+
+      const schedules = Object.keys(PIPE_DATABASE[nps].sch);
+      schedules.forEach(sch => {
+        const opt = document.createElement('option');
+        opt.value = sch;
+        opt.innerText = `Sch ${sch}`;
+        if (sch === "40" || sch === currentSch) opt.selected = true;
+        schSelect.appendChild(opt);
+      });
+
+      const selectedSch = schSelect.value || schedules[0];
+      const od = PIPE_DATABASE[nps].od;
+      const wall = PIPE_DATABASE[nps].sch[selectedSch];
+
+      document.getElementById('tubeOD').value = currentUnitSystem === 'metric' ? od : (od / 25.4).toFixed(3);
+      document.getElementById('tubeWall').value = currentUnitSystem === 'metric' ? wall : (wall / 25.4).toFixed(3);
+
+      calculate();
+    }
+
+    function calculateFuel() {
+      const ch4 = parseFloat(document.getElementById('f_CH4').value) || 0;
+      const c2h6 = parseFloat(document.getElementById('f_C2H6').value) || 0;
+      const c3h8 = parseFloat(document.getElementById('f_C3H8').value) || 0;
+      const h2 = parseFloat(document.getElementById('f_H2').value) || 0;
+      const co2 = parseFloat(document.getElementById('f_CO2').value) || 0;
+      const h2s = parseFloat(document.getElementById('f_H2S').value) || 0;
+
+      const total = ch4 + c2h6 + c3h8 + h2 + co2 + h2s;
+      const mw = (ch4 * 16.04 + c2h6 * 30.07 + c3h8 * 44.1 + h2 * 2.016 + co2 * 44.01 + h2s * 34.08) / (total || 1);
+      const lhvMJ = (ch4 * 802 + c2h6 * 1428 + c3h8 * 2040 + h2 * 242) / (total || 1) / (mw / 1000);
+
+      document.getElementById('resMW').innerText = mw.toFixed(2) + ' g/mol';
+      document.getElementById('resLHV').innerText = lhvMJ.toFixed(1) + ' MJ/kg';
+
+      // Verhoff-Banchero Acid Dew Point Correlation
+      const pH2O = 0.12; // atm
+      const pSO3 = (h2s / 100) * 0.02 * 0.10; // atm assuming 2% SO2 to SO3 conversion
+      let dewPointC = 120;
+      if (pSO3 > 0) {
+        const invT = 0.002276 - 0.000029 * Math.log(pH2O) - 0.000085 * Math.log(pSO3) + 0.0000161 * Math.log(pH2O) * Math.log(pSO3);
+        dewPointC = (1 / invT) - 273.15;
+      }
+      document.getElementById('resAcidDew').innerText = dewPointC.toFixed(1) + ' °C';
+
+      calculate();
+    }
+
+    function calculate() {
+      // Fetch Core Parameters
+      const duty = parseFloat(document.getElementById('duty').value) || 15; // MW
+      const tubeCount = parseFloat(document.getElementById('tubeCount').value) || 36;
+      const tubeL = parseFloat(document.getElementById('tubeLength').value) || 12; // m
+      const tubeOD_mm = parseFloat(document.getElementById('tubeOD').value) || 114.3; // mm
+      const stackH = parseFloat(document.getElementById('stackHeight').value) || 25; // m
+      const stackDia_mm = parseFloat(document.getElementById('stackDiameter').value) || 1200; // mm
+
+      // Radiant Area & Heat Flux Calculations
+      const areaRad = tubeCount * Math.PI * (tubeOD_mm / 1000) * tubeL; // m2
+      const avgFluxkW = (duty * 1000 * 0.70) / areaRad; // kW/m2 (assuming 70% radiant duty)
+
+      // API 530 Peak TMT Estimation
+      const tempOut = parseFloat(document.getElementById('tempOut').value) || 360;
+      const maxTMT = tempOut + (avgFluxkW * 1.8 * 0.85); // Estimated peak skin temp
+
+      // Stack Draft Hydraulic Profile (API 560)
+      const rhoAir = 1.2; // kg/m3
+      const rhoFlue = 0.55; // kg/m3 flue gas at 300C
+      const buoyancyDraft_mmH2O = (9.81 * stackH * (rhoAir - rhoFlue)) / 9.81; // mmH2O
+
+      const hearthDraft = parseFloat(document.getElementById('targetHearthDraft').value) || -2.5;
+      const bridgeWallDraft = hearthDraft + 1.2;
+      const convBankDraft = bridgeWallDraft - 8.5;
+      const damperDraft = convBankDraft - 3.0;
+      const stackTipDraft = 0.0;
+
+      // Update KPI Labels
+      document.getElementById('kpiAvgFlux').innerText = avgFluxkW.toFixed(1);
+      document.getElementById('kpiMaxTMT').innerText = maxTMT.toFixed(0);
+      document.getElementById('kpiStackDraft').innerText = buoyancyDraft_mmH2O.toFixed(1);
+      document.getElementById('kpiLifeCons').innerText = (maxTMT > 620 ? "Alto (>85%)" : "Normal (<20%)");
+
+      // Update Charts & Visuals
+      updateCharts([hearthDraft, bridgeWallDraft, convBankDraft, damperDraft, stackTipDraft], maxTMT, tempOut);
+      renderSVGVisualizer(maxTMT);
+      updateDatasheet(avgFluxkW, maxTMT, buoyancyDraft_mmH2O);
+    }
+
+    function renderSVGVisualizer(tmt) {
+      const type = document.getElementById('heaterType').value;
+      const svg = document.getElementById('heaterSvg');
+      document.getElementById('badgeHeaterType').innerText = type === 'vertical' ? 'Cilíndrico Vertical' : 'Tipo Cabina (Box)';
+
+      const color = tmt > 600 ? '#ef4444' : tmt > 500 ? '#f97316' : '#eab308';
+
+      svg.innerHTML = `
+        <!-- Chimenea/Stack -->
+        <rect x="85" y="10" width="30" height="70" fill="#334155" stroke="#64748b" stroke-width="2"/>
+        <line x1="85" y1="40" x2="115" y2="40" stroke="#f97316" stroke-width="3" stroke-dasharray="2,2"/> <!-- Damper -->
+        
+        <!-- Sección Convectiva -->
+        <rect x="70" y="80" width="60" height="40" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+        <line x1="75" y1="95" x2="125" y2="95" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="75" y1="105" x2="125" y2="105" stroke="#94a3b8" stroke-width="2"/>
+
+        <!-- Sección Radiante / Firebox -->
+        <rect x="50" y="120" width="100" height="110" fill="#0f172a" stroke="#475569" stroke-dasharray="0" stroke-width="2" rx="4"/>
+        
+        <!-- Serpentín Radiante (Tubos) -->
+        <line x1="60" y1="130" x2="60" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+        <line x1="140" y1="130" x2="140" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+        
+        <!-- Llama / Quemadores -->
+        <path d="M 90 230 Q 100 180 110 230 Z" fill="#f97316" opacity="0.8"/>
+        <path d="M 95 230 Q 100 195 105 230 Z" fill="#fef08a"/>
+        <rect x="85" y="230" width="30" height="10" fill="#475569"/>
+      `;
+    }
+
+    function initCharts() {
+      const ctxDraft = document.getElementById('chartDraftHGL').getContext('2d');
+      chartDraft = new Chart(ctxDraft, {
+        type: 'line',
+        data: {
+          labels: ['Piso (Hearth)', 'Bridge Wall', 'Banco Conv.', 'Damper', 'Punta Chimenea'],
+          datasets: [{
+            label: 'Presión de Tiro (mmH2O)',
+            data: [-2.5, -1.3, -9.8, -12.8, 0],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+          }
+        }
+      });
+
+      const ctxTMT = document.getElementById('chartTMTProfile').getContext('2d');
+      chartTMT = new Chart(ctxTMT, {
+        type: 'line',
+        data: {
+          labels: ['0%', '20%', '40%', '60%', '80%', '100% Longitud'],
+          datasets: [
+            { label: 'TMT Calculada (°C)', data: [240, 310, 390, 470, 530, 560], borderColor: '#f97316', tension: 0.4 },
+            { label: 'Límite API 530 (°C)', data: [650, 650, 650, 650, 650, 650], borderColor: '#ef4444', borderDash: [5, 5] }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+          scales: {
+            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+    }
+
+    function updateCharts(draftData, maxTmt, tempOut) {
+      if (chartDraft) {
+        chartDraft.data.datasets[0].data = draftData;
+        chartDraft.update();
+      }
+      if (chartTMT) {
+        const tempIn = parseFloat(document.getElementById('tempIn').value) || 220;
+        chartTMT.data.datasets[0].data = [
+          tempIn,
+          tempIn + (tempOut - tempIn) * 0.25 + 20,
+          tempIn + (tempOut - tempIn) * 0.50 + 40,
+          tempIn + (tempOut - tempIn) * 0.75 + 60,
+          tempOut + 50,
+          maxTmt
+        ];
+        chartTMT.update();
+      }
+    }
+
+    function updateDatasheet(flux, maxTmt, draft) {
+      document.getElementById('dsDate').innerText = new Date().toLocaleDateString();
+      document.getElementById('dsDuty').innerText = document.getElementById('duty').value + ' MW';
+      document.getElementById('dsEff').innerText = document.getElementById('efficiency').value;
+      document.getElementById('dsAvgFlux').innerText = flux.toFixed(1) + ' kW/m²';
+      document.getElementById('dsMaxTMT').innerText = maxTmt.toFixed(0) + ' °C';
+      document.getElementById('dsStackDia').innerText = document.getElementById('stackDiameter').value + ' mm';
+      document.getElementById('dsStackH').innerText = document.getElementById('stackHeight').value + ' m';
+      document.getElementById('dsDraftHearth').innerText = document.getElementById('targetHearthDraft').value + ' mmH2O';
+      document.getElementById('dsStackVel').innerText = document.getElementById('targetStackVel').value + ' m/s';
+      document.getElementById('dsAlloy').innerText = document.getElementById('alloySelect').value;
+      document.getElementById('dsPipeSpec').innerText = `NPS ${document.getElementById('npsSelect').value}" Sch ${document.getElementById('schSelect').value}`;
+      document.getElementById('dsTmin').innerText = (parseFloat(document.getElementById('tubeWall').value) * 0.75).toFixed(2) + ' mm';
+      document.getElementById('dsMAWP').innerText = (parseFloat(document.getElementById('designPress').value) * 1.3).toFixed(1) + ' bar';
+    }
+
+    function saveProject() {
+      const state = {
+        duty: document.getElementById('duty').value,
+        nps: document.getElementById('npsSelect').value,
+        sch: document.getElementById('schSelect').value,
+        alloy: document.getElementById('alloySelect').value
+      };
+      localStorage.setItem('firedheater_case', JSON.stringify(state));
+      alert('¡Caso de diseño guardado exitosamente en el navegador (Offline)!');
+    }
+  </script>
+</body>
+</html>
