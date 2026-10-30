@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fired Heater Workstation — API 560 / 530 & Stack Sizing</title>
+  <title>Fired Heater Workstation — API 560 / 530 MVP</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -26,7 +26,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Header / Navbar -->
+  <!-- Navbar / Header -->
   <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 no-print">
     <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-3">
@@ -36,9 +36,9 @@
         <div>
           <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             FiredHeater<span class="text-orange-500">Pro</span> 
-            <span class="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-mono">API 560 / 530</span>
+            <span class="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-mono">MVP API 560 / 530</span>
           </h1>
-          <p class="text-xs text-slate-400">Plataforma de Simulación y Análisis Hidráulico / Térmico 100% Offline</p>
+          <p class="text-xs text-slate-400">Estación de Trabajo de Ingeniería Termohidráulica 100% Offline</p>
         </div>
       </div>
 
@@ -69,16 +69,16 @@
     <!-- Panel de Entradas (Lado Izquierdo) -->
     <div class="lg:col-span-5 space-y-6 no-print">
       
-      <!-- Navegación de Pestañas de Entrada -->
-      <div class="flex border-b border-slate-800 space-x-2">
+      <!-- Navegación de Pestañas -->
+      <div class="flex border-b border-slate-800 space-x-1">
         <button onclick="switchTab('tabGeom')" id="btnTabGeom" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-orange-500 text-orange-400">
           Geometría & Tubos
         </button>
         <button onclick="switchTab('tabFuel')" id="btnTabFuel" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
-          Gas Fuel & Combustión
+          Gas Fuel & Dew Point
         </button>
         <button onclick="switchTab('tabStack')" id="btnTabStack" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
-          Stack Sizing & Tiro
+          Stack & Tiro
         </button>
         <button onclick="switchTab('tabProcess')" id="btnTabProcess" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
           Proceso & API 530
@@ -113,15 +113,11 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Diámetro Nominal (NPS)</label>
-              <select id="npsSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
-                <!-- Opciones JS -->
-              </select>
+              <select id="npsSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200"></select>
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Cédula (Schedule)</label>
-              <select id="schSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
-                <!-- Opciones JS -->
-              </select>
+              <select id="schSelect" onchange="onPipeSelectChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200"></select>
             </div>
           </div>
 
@@ -206,7 +202,7 @@
           </h2>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Velocidad Objetivo Flue Gas (<span class="unit-vel">m/s</span>)</label>
+              <label class="block text-xs text-slate-400 mb-1">Velocidad Objetivo Gases (<span class="unit-vel">m/s</span>)</label>
               <input type="number" id="targetStackVel" value="7.5" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
             </div>
             <div>
@@ -233,7 +229,7 @@
           </h2>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Carga Térmica Asobrbida (<span class="unit-power">MW</span>)</label>
+              <label class="block text-xs text-slate-400 mb-1">Carga Térmica Absorbida (<span class="unit-power">MW</span>)</label>
               <input type="number" id="duty" value="15" step="0.5" oninput="calculate()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
             </div>
             <div>
@@ -320,7 +316,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-          <!-- Render SVG Esquemático del Horno -->
+          <!-- Render SVG Esquemático Dinámico -->
           <div class="bg-slate-950 rounded-lg p-3 border border-slate-800 flex justify-center items-center min-h-[220px]">
             <svg id="heaterSvg" viewBox="0 0 200 260" class="w-full h-56 max-w-[200px]"></svg>
           </div>
@@ -393,7 +389,7 @@
 
   <!-- JavaScript Logic & Calculation Engine -->
   <script>
-    // Database de Pipe Schedules ASME B36.10M (NPS -> OD mm & Wall Thickness mm)
+    // Database de Pipe Schedules ASME B36.10M
     const PIPE_DATABASE = {
       "2": { od: 60.3, sch: { "40": 3.91, "80": 5.54, "160": 8.74 } },
       "3": { od: 88.9, sch: { "40": 5.49, "80": 7.62, "160": 11.13 } },
@@ -503,9 +499,8 @@
       document.getElementById('resMW').innerText = mw.toFixed(2) + ' g/mol';
       document.getElementById('resLHV').innerText = lhvMJ.toFixed(1) + ' MJ/kg';
 
-      // Verhoff-Banchero Acid Dew Point Correlation
-      const pH2O = 0.12; // atm
-      const pSO3 = (h2s / 100) * 0.02 * 0.10; // atm assuming 2% SO2 to SO3 conversion
+      const pH2O = 0.12;
+      const pSO3 = (h2s / 100) * 0.02 * 0.10;
       let dewPointC = 120;
       if (pSO3 > 0) {
         const invT = 0.002276 - 0.000029 * Math.log(pH2O) - 0.000085 * Math.log(pSO3) + 0.0000161 * Math.log(pH2O) * Math.log(pSO3);
@@ -517,26 +512,21 @@
     }
 
     function calculate() {
-      // Fetch Core Parameters
-      const duty = parseFloat(document.getElementById('duty').value) || 15; // MW
+      const duty = parseFloat(document.getElementById('duty').value) || 15;
       const tubeCount = parseFloat(document.getElementById('tubeCount').value) || 36;
-      const tubeL = parseFloat(document.getElementById('tubeLength').value) || 12; // m
-      const tubeOD_mm = parseFloat(document.getElementById('tubeOD').value) || 114.3; // mm
-      const stackH = parseFloat(document.getElementById('stackHeight').value) || 25; // m
-      const stackDia_mm = parseFloat(document.getElementById('stackDiameter').value) || 1200; // mm
+      const tubeL = parseFloat(document.getElementById('tubeLength').value) || 12;
+      const tubeOD_mm = parseFloat(document.getElementById('tubeOD').value) || 114.3;
+      const stackH = parseFloat(document.getElementById('stackHeight').value) || 25;
 
-      // Radiant Area & Heat Flux Calculations
-      const areaRad = tubeCount * Math.PI * (tubeOD_mm / 1000) * tubeL; // m2
-      const avgFluxkW = (duty * 1000 * 0.70) / areaRad; // kW/m2 (assuming 70% radiant duty)
+      const areaRad = tubeCount * Math.PI * (tubeOD_mm / 1000) * tubeL;
+      const avgFluxkW = (duty * 1000 * 0.70) / areaRad;
 
-      // API 530 Peak TMT Estimation
       const tempOut = parseFloat(document.getElementById('tempOut').value) || 360;
-      const maxTMT = tempOut + (avgFluxkW * 1.8 * 0.85); // Estimated peak skin temp
+      const maxTMT = tempOut + (avgFluxkW * 1.8 * 0.85);
 
-      // Stack Draft Hydraulic Profile (API 560)
-      const rhoAir = 1.2; // kg/m3
-      const rhoFlue = 0.55; // kg/m3 flue gas at 300C
-      const buoyancyDraft_mmH2O = (9.81 * stackH * (rhoAir - rhoFlue)) / 9.81; // mmH2O
+      const rhoAir = 1.2;
+      const rhoFlue = 0.55;
+      const buoyancyDraft_mmH2O = (9.81 * stackH * (rhoAir - rhoFlue)) / 9.81;
 
       const hearthDraft = parseFloat(document.getElementById('targetHearthDraft').value) || -2.5;
       const bridgeWallDraft = hearthDraft + 1.2;
@@ -544,13 +534,11 @@
       const damperDraft = convBankDraft - 3.0;
       const stackTipDraft = 0.0;
 
-      // Update KPI Labels
       document.getElementById('kpiAvgFlux').innerText = avgFluxkW.toFixed(1);
       document.getElementById('kpiMaxTMT').innerText = maxTMT.toFixed(0);
       document.getElementById('kpiStackDraft').innerText = buoyancyDraft_mmH2O.toFixed(1);
       document.getElementById('kpiLifeCons').innerText = (maxTMT > 620 ? "Alto (>85%)" : "Normal (<20%)");
 
-      // Update Charts & Visuals
       updateCharts([hearthDraft, bridgeWallDraft, convBankDraft, damperDraft, stackTipDraft], maxTMT, tempOut);
       renderSVGVisualizer(maxTMT);
       updateDatasheet(avgFluxkW, maxTMT, buoyancyDraft_mmH2O);
@@ -563,28 +551,59 @@
 
       const color = tmt > 600 ? '#ef4444' : tmt > 500 ? '#f97316' : '#eab308';
 
-      svg.innerHTML = `
-        <!-- Chimenea/Stack -->
-        <rect x="85" y="10" width="30" height="70" fill="#334155" stroke="#64748b" stroke-width="2"/>
-        <line x1="85" y1="40" x2="115" y2="40" stroke="#f97316" stroke-width="3" stroke-dasharray="2,2"/> <!-- Damper -->
-        
-        <!-- Sección Convectiva -->
-        <rect x="70" y="80" width="60" height="40" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-        <line x1="75" y1="95" x2="125" y2="95" stroke="#94a3b8" stroke-width="2"/>
-        <line x1="75" y1="105" x2="125" y2="105" stroke="#94a3b8" stroke-width="2"/>
+      if (type === 'vertical') {
+        svg.innerHTML = `
+          <!-- Chimenea/Stack -->
+          <rect x="85" y="10" width="30" height="70" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <line x1="85" y1="40" x2="115" y2="40" stroke="#f97316" stroke-width="3" stroke-dasharray="2,2"/>
+          
+          <!-- Sección Convectiva -->
+          <rect x="70" y="80" width="60" height="40" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+          <line x1="75" y1="95" x2="125" y2="95" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="75" y1="105" x2="125" y2="105" stroke="#94a3b8" stroke-width="2"/>
 
-        <!-- Sección Radiante / Firebox -->
-        <rect x="50" y="120" width="100" height="110" fill="#0f172a" stroke="#475569" stroke-dasharray="0" stroke-width="2" rx="4"/>
-        
-        <!-- Serpentín Radiante (Tubos) -->
-        <line x1="60" y1="130" x2="60" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
-        <line x1="140" y1="130" x2="140" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
-        
-        <!-- Llama / Quemadores -->
-        <path d="M 90 230 Q 100 180 110 230 Z" fill="#f97316" opacity="0.8"/>
-        <path d="M 95 230 Q 100 195 105 230 Z" fill="#fef08a"/>
-        <rect x="85" y="230" width="30" height="10" fill="#475569"/>
-      `;
+          <!-- Sección Radiante / Firebox Cilíndrico -->
+          <rect x="50" y="120" width="100" height="110" fill="#0f172a" stroke="#475569" stroke-width="2" rx="4"/>
+          
+          <!-- Tubos Verticales -->
+          <line x1="60" y1="130" x2="60" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+          <line x1="140" y1="130" x2="140" y2="210" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+          
+          <!-- Llama Central -->
+          <path d="M 90 230 Q 100 180 110 230 Z" fill="#f97316" opacity="0.8"/>
+          <path d="M 95 230 Q 100 195 105 230 Z" fill="#fef08a"/>
+          <rect x="85" y="230" width="30" height="10" fill="#475569"/>
+        `;
+      } else {
+        svg.innerHTML = `
+          <!-- Chimenea Box -->
+          <rect x="85" y="10" width="30" height="50" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <line x1="85" y1="35" x2="115" y2="35" stroke="#f97316" stroke-width="3" stroke-dasharray="2,2"/>
+          
+          <!-- Sección Convectiva Horizontal -->
+          <rect x="65" y="60" width="70" height="35" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+          <line x1="70" y1="72" x2="130" y2="72" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="70" y1="83" x2="130" y2="83" stroke="#94a3b8" stroke-width="2"/>
+
+          <!-- Estructura de Cabina (Box) con Techo Inclinado -->
+          <path d="M 25 120 L 65 95 L 135 95 L 175 120 L 175 220 L 25 220 Z" fill="#0f172a" stroke="#475569" stroke-width="2"/>
+          
+          <!-- Serpentines Horizontales -->
+          <line x1="35" y1="130" x2="165" y2="130" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+          <line x1="35" y1="150" x2="165" y2="150" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+          <line x1="35" y1="170" x2="165" y2="170" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+          
+          <!-- Múltiples Quemadores de Piso -->
+          <path d="M 45 220 Q 52 185 60 220 Z" fill="#f97316" opacity="0.8"/>
+          <rect x="43" y="220" width="18" height="8" fill="#475569"/>
+
+          <path d="M 92 220 Q 100 180 108 220 Z" fill="#f97316" opacity="0.8"/>
+          <rect x="91" y="220" width="18" height="8" fill="#475569"/>
+
+          <path d="M 140 220 Q 148 185 155 220 Z" fill="#f97316" opacity="0.8"/>
+          <rect x="139" y="220" width="18" height="8" fill="#475569"/>
+        `;
+      }
     }
 
     function initCharts() {
@@ -672,6 +691,7 @@
 
     function saveProject() {
       const state = {
+        type: document.getElementById('heaterType').value,
         duty: document.getElementById('duty').value,
         nps: document.getElementById('npsSelect').value,
         sch: document.getElementById('schSelect').value,
